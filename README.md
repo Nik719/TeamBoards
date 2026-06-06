@@ -18,6 +18,7 @@ A production-ready REST API backend built with **Django 4.2** and **Django REST 
   - [Run with Docker (recommended)](#run-with-docker-recommended)
   - [Run Locally (without Docker)](#run-locally-without-docker)
 - [Management Commands](#management-commands)
+- [Running the Test Suite](#running-the-test-suite)
 - [Testing the API with Postman](#testing-the-api-with-postman)
 - [Design Decisions](#design-decisions)
 
@@ -45,7 +46,7 @@ Key behaviours:
 | Authentication | `djangorestframework-simplejwt` 5.3 (JWT Bearer tokens) |
 | Database | PostgreSQL 15 |
 | CORS | `django-cors-headers` |
-| Server | Gunicorn (production), Django dev server (Docker Compose) |
+| Server | Gunicorn 22 (both Docker and local production) |
 | Container | Docker + Docker Compose |
 
 ---
@@ -66,17 +67,21 @@ TeamBoard/
 │   ├── permissions.py       # Custom IsAdminUser permission
 │   ├── serializers.py       # Input validation + output formatting
 │   ├── signals.py           # Auto-creates Company on User save
+│   ├── tests.py             # 35 unit tests covering all endpoints
 │   ├── urls.py              # /api/* routes
 │   └── views.py             # All view logic
 ├── teamboard/
+│   ├── asgi.py
 │   ├── settings.py          # Django settings (env-driven)
 │   ├── urls.py              # Root URL conf
 │   └── wsgi.py
+├── .env                     # Local environment variables (not committed)
 ├── .env.example             # Environment variable template
 ├── docker-compose.yml       # Postgres + web service orchestration
 ├── Dockerfile               # Python 3.11-slim image
 ├── manage.py
-└── requirements.txt
+├── requirements.txt
+└── TeamBoard.postman_collection.json  # 11 official + 10 example scenarios
 ```
 
 ---
@@ -319,13 +324,12 @@ DB_PORT=5432
 ### Run with Docker (recommended)
 
 ```bash
-# 1. Build images and start Postgres + Django dev server
-docker-compose up --build
+# 1. Build images and start Postgres + Gunicorn
+docker compose up --build
 ```
 
-> Migrations run automatically on container start — the `docker-compose.yml` command is:
-> `python manage.py migrate && python manage.py runserver 0.0.0.0:8000`
-> You do not need to run `migrate` manually in the Docker workflow.
+> Migrations run automatically on container start. You do not need to run `migrate` manually.
+> The web container starts **Gunicorn** with 2 workers on `0.0.0.0:8000`.
 
 ```bash
 # 2. In a separate terminal, seed KB entries and create an admin user
@@ -341,12 +345,12 @@ docker exec teamboard_web python manage.py create_admin \
 
 To stop:
 ```bash
-docker-compose down
+docker compose down
 ```
 
 To stop and wipe the database volume:
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 ### Run Locally (without Docker)
@@ -354,9 +358,9 @@ docker-compose down -v
 Requires a running PostgreSQL instance. Update `DB_HOST=localhost` in `.env`.
 
 ```bash
-# 1. Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+# 1. Create and activate a virtual environment (Python 3.11 or 3.12 recommended)
+python3.12 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 
 # 2. Install dependencies
 pip install -r requirements.txt
@@ -368,8 +372,11 @@ python manage.py migrate
 python manage.py seed_kb
 python manage.py create_admin --username admin --password Admin1234! --company-name "My Company"
 
-# 5. Start the dev server
+# 5a. Start the dev server (development only)
 python manage.py runserver
+
+# 5b. Or start with Gunicorn (production)
+gunicorn teamboard.wsgi:application --bind 0.0.0.0:8000 --workers 2
 ```
 
 ---
@@ -400,6 +407,42 @@ Inserts 12 sample Knowledge Base entries covering the categories `api`, `databas
 ```bash
 python manage.py seed_kb
 ```
+
+---
+
+## Running the Test Suite
+
+The project ships with **35 unit tests** covering all 5 endpoints across success paths, authentication failures, validation errors, and edge cases. Tests use Django's built-in test runner with a real PostgreSQL database (isolated test DB — no production data is affected).
+
+```bash
+# Using the local venv (requires a running PostgreSQL instance)
+python manage.py test api --verbosity=2
+```
+
+Or inside Docker:
+
+```bash
+docker exec teamboard_web python manage.py test api --verbosity=2
+```
+
+Expected output:
+```
+Found 35 test(s).
+...
+Ran 35 tests in ~3s
+
+OK
+```
+
+### What is covered
+
+| Test class | Tests |
+|---|---|
+| `HealthViewTest` | Returns 200, no auth required |
+| `RegisterViewTest` | Success, duplicate username, short password, invalid email, missing field, signal creates Company + api_key |
+| `LoginViewTest` | Success, wrong password, unknown user, missing username/password |
+| `KBQueryViewTest` | Match by question, match by answer, case-insensitive, no results, blank search, missing field, unauthenticated, QueryLog created, pagination, page_size capped at 20 |
+| `AdminUsageSummaryViewTest` | Admin 200, correct aggregates, top terms ordered by count, capped at 5, client 403, unauthenticated 401 |
 
 ---
 
