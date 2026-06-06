@@ -1,5 +1,227 @@
-python -r install requirements.txt
+================================================================================
+  TeamBoard -- B2B Knowledge Base API
+  Complete Setup Guide (run commands in order)
+================================================================================
 
-python3 -m venv .venv && source .venv/bin/activate && python -m pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
+PREREQUISITES
+  - Python 3.10+    -> https://www.python.org/downloads/
+  - Docker Desktop  -> https://www.docker.com/products/docker-desktop/
+  - Git             -> https://git-scm.com/downloads
 
-brew install libpq && export PATH="/opt/homebrew/opt/libpq/bin:$PATH" && pip install -r requirements.txt
+  Check versions:
+    python3 --version
+    docker --version
+    docker compose version
+
+================================================================================
+  STEP 1 -- CLONE THE REPOSITORY
+================================================================================
+
+git clone <your-repo-url>
+cd TeamBoards
+
+================================================================================
+  STEP 2 -- CREATE & ACTIVATE VIRTUAL ENVIRONMENT
+================================================================================
+
+python3 -m venv .venv
+
+# macOS / Linux:
+source .venv/bin/activate
+
+# Windows (Command Prompt):
+.venv\Scripts\activate.bat
+
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+
+# You should see (.venv) in your terminal prompt after activation.
+
+================================================================================
+  STEP 3 -- INSTALL DEPENDENCIES
+================================================================================
+
+python3 -m pip install --upgrade pip setuptools wheel
+pip install -r requirements.txt
+
+# macOS only -- if psycopg2 fails with "library not found for -lpq":
+brew install libpq
+export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+pip install -r requirements.txt
+
+================================================================================
+  STEP 4 -- ENVIRONMENT VARIABLES
+================================================================================
+
+cp .env.example .env
+
+# Open .env and set your values (use nano, vim, or any editor):
+nano .env
+
+# Required values in .env:
+#
+#   SECRET_KEY=your-secret-key-here
+#   DEBUG=True
+#   ALLOWED_HOSTS=localhost,127.0.0.1
+#
+#   DB_NAME=teamboard
+#   DB_USER=teamboard_user
+#   DB_PASSWORD=teamboard_pass
+#   DB_HOST=db          <-- use "db" for Docker, "localhost" for local
+#   DB_PORT=5432
+#   DB_CONN_MAX_AGE=60
+
+# Generate a strong SECRET_KEY:
+python3 -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+
+================================================================================
+  OPTION A -- RUN WITH DOCKER  (recommended, no local Postgres needed)
+================================================================================
+
+# Build and start all services (PostgreSQL + Django):
+docker compose up --build
+
+# Run in background (detached mode):
+docker compose up --build -d
+
+# Apply migrations:
+docker compose exec web python manage.py migrate
+
+# Seed the Knowledge Base (12 entries):
+docker compose exec web python manage.py seed_kb
+
+# Create admin superuser (username: admin  password: Admin1234!):
+docker compose exec web python manage.py create_admin
+
+# View live logs:
+docker compose logs -f web
+
+# Stop all services:
+docker compose down
+
+# Stop and wipe the database (full reset):
+docker compose down -v
+
+================================================================================
+  OPTION B -- RUN LOCALLY (requires PostgreSQL installed on your machine)
+================================================================================
+
+# Set DB_HOST=localhost in your .env before running these commands.
+
+# Start Postgres (macOS with Homebrew):
+brew services start postgresql@15
+
+# Create database and user:
+psql postgres -c "CREATE USER teamboard_user WITH PASSWORD 'teamboard_pass';"
+psql postgres -c "CREATE DATABASE teamboard OWNER teamboard_user;"
+
+# Apply migrations:
+python manage.py migrate
+
+# Seed the Knowledge Base (12 entries):
+python manage.py seed_kb
+
+# Create admin superuser (username: admin  password: Admin1234!):
+python manage.py create_admin
+
+# Start the development server:
+python manage.py runserver
+
+# Server is now running at: http://localhost:8000
+
+================================================================================
+  STEP 5 -- VERIFY THE SERVER IS RUNNING
+================================================================================
+
+curl http://localhost:8000/api/health/
+
+# Expected response: {"status": "ok"}
+
+================================================================================
+  USEFUL MANAGEMENT COMMANDS
+================================================================================
+
+# Re-seed KB (only runs if table is empty -- safe to call again):
+python manage.py seed_kb
+docker compose exec web python manage.py seed_kb
+
+# Run tests:
+python manage.py test api
+docker compose exec web python manage.py test api
+
+# Open Django shell:
+python manage.py shell
+docker compose exec web python manage.py shell
+
+# Create new migrations after model changes:
+python manage.py makemigrations
+python manage.py migrate
+
+# Django admin panel -> http://localhost:8000/admin/
+# Login: admin / Admin1234!
+
+================================================================================
+  API ENDPOINTS -- QUICK REFERENCE
+================================================================================
+
+  GET   /api/health/                 server health check (no auth)
+  POST  /api/auth/register/          register a company, returns JWT + api_key
+  POST  /api/auth/login/             login, returns JWT + api_key
+  POST  /api/kb/query/               search knowledge base (JWT required)
+  GET   /api/admin/usage-summary/    usage stats (admin JWT only)
+
+  Pagination params on /api/kb/query/:
+    ?page=1&page_size=5    (defaults: page=1, page_size=5, max page_size=20)
+
+================================================================================
+  POSTMAN COLLECTION
+================================================================================
+
+  File: TeamBoard.postman_collection.json
+
+  Import steps:
+    1. Open Postman
+    2. Click Import -> select TeamBoard.postman_collection.json
+    3. base_url is already set to http://localhost:8000
+    4. Run Scenario 1 first -- it auto-saves the JWT token and api_key
+    5. Run scenarios 1 through 11 in order
+
+================================================================================
+  PGADMIN -- VIEW DATABASE (optional)
+================================================================================
+
+  Connection settings:
+    Host:     localhost
+    Port:     5432
+    Database: teamboard
+    Username: teamboard_user
+    Password: teamboard_pass
+
+  Useful queries:
+    SELECT * FROM api_kbentry;
+    SELECT * FROM api_querylog ORDER BY queried_at DESC LIMIT 10;
+    SELECT * FROM api_company;
+
+================================================================================
+  COMMON ERRORS & FIXES
+================================================================================
+
+  "could not connect to server"
+    -> Docker path: make sure Docker Desktop is running, then: docker compose up
+    -> Local path:  make sure Postgres is running: brew services start postgresql@15
+    -> Check DB_HOST in .env: "db" for Docker, "localhost" for local
+
+  "No module named 'dotenv'"
+    -> Virtual environment is not activated. Run:
+       source .venv/bin/activate        (macOS/Linux)
+       .venv\Scripts\activate.bat       (Windows)
+
+  "library not found for -lpq" (macOS psycopg2 error)
+    -> brew install libpq
+       export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+       pip install -r requirements.txt
+
+  "port 8000 already in use"
+    -> python manage.py runserver 8080
+
+================================================================================
