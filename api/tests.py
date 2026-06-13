@@ -6,10 +6,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Company, KBEntry, QueryLog
 
 
-def bearer(user):
-    return {'HTTP_AUTHORIZATION': f'Bearer {RefreshToken.for_user(user).access_token}'}
-
-
 # ─── Health ───────────────────────────────────────────────────────────────────
 
 class HealthViewTest(TestCase):
@@ -129,7 +125,7 @@ class KBQueryViewTest(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = User.objects.create_user(username='client1', password='pass12345')
-        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {RefreshToken.for_user(self.user).access_token}')
+        self.client.credentials(HTTP_X_API_KEY=self.user.company.api_key)
 
         KBEntry.objects.create(
             question='What is Django?',
@@ -181,6 +177,11 @@ class KBQueryViewTest(TestCase):
 
     def test_unauthenticated_returns_401(self):
         self.client.credentials()
+        r = self.client.post(self.URL, {'search': 'Django'}, format='json')
+        self.assertEqual(r.status_code, 401)
+
+    def test_invalid_api_key_returns_401(self):
+        self.client.credentials(HTTP_X_API_KEY='not-a-real-key')
         r = self.client.post(self.URL, {'search': 'Django'}, format='json')
         self.assertEqual(r.status_code, 401)
 

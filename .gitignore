@@ -1,6 +1,7 @@
 # Environment
 .env
 *.env
+*.env.local
 
 # Python
 __pycache__/
@@ -13,6 +14,9 @@ dist/
 build/
 eggs/
 *.egg
+.eggs/
+wheels/
+pip-wheel-metadata/
 
 # Virtual environment
 .venv/
@@ -31,12 +35,26 @@ db.sqlite3
 .DS_Store
 .AppleDouble
 .LSOverride
+Thumbs.db
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+*.swn
+.claude/
 
 # Docker
-*.env.local
+docker-compose.override.yml
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
+*.cover
+
+# Misc
+*.bak
+*.tmp

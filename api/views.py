@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .authentication import ApiKeyAuthentication
 from .models import KBEntry, QueryLog
 from .permissions import IsAdminUser
 from .serializers import (
@@ -110,6 +111,8 @@ class LoginView(APIView):
 # ─── POST /api/kb/query/ ─────────────────────────────────────────────────────
 
 class KBQueryView(APIView):
+    authentication_classes = [ApiKeyAuthentication]
+
     def post(self, request):
         serializer = KBQuerySerializer(data=request.data)
         if not serializer.is_valid():

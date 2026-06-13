@@ -207,7 +207,13 @@ Authenticate and receive a JWT. No authentication required.
 
 ### `POST /api/kb/query/`
 
-Search the Knowledge Base. **Requires JWT authentication.**
+Search the Knowledge Base. **Requires API key authentication.**
+
+Send the company's `api_key` (returned at registration and login) in the `X-Api-Key` header:
+
+```
+X-Api-Key: KSqrkbORsCX6WRGC6Vx5yc4LWs6mJ5oqLoppZAjw9zo
+```
 
 **Query parameters**
 
@@ -271,19 +277,33 @@ Returns up to 5 top search terms, ordered by frequency descending.
 
 ## Authentication & Authorization
 
-All endpoints except `/api/health/`, `/api/auth/register/`, and `/api/auth/login/` require a valid JWT in the `Authorization` header:
+TeamBoard uses **two separate credential types** depending on the endpoint:
+
+### API Key — for KB queries (B2B product integration)
+
+`/api/kb/query/` authenticates via the `X-Api-Key` header:
+
+```
+X-Api-Key: <api_key returned at registration or login>
+```
+
+The API key is a server-generated `secrets.token_urlsafe(32)` credential unique to each company. It is the credential a B2B client's product sends with every request — it cannot be forged like a plain company ID.
+
+### JWT Bearer — for admin dashboard
+
+`/api/admin/usage-summary/` authenticates via the `Authorization` header:
 
 ```
 Authorization: Bearer <access token>
 ```
 
-JWT tokens expire after **24 hours**. Refresh tokens are valid for **7 days** (refresh token endpoint is available via `rest_framework_simplejwt` but not explicitly routed in this project — re-login to get a new access token).
+JWT tokens expire after **24 hours**. Re-login to obtain a fresh token.
 
 **Role system**
 
 | Role | Who | Access |
 |---|---|---|
-| `client` | Any registered company | `/api/kb/query/` |
+| `client` | Any registered company | `/api/kb/query/` (via `X-Api-Key`) |
 | `admin` | Created via `create_admin` management command | `/api/kb/query/` + `/api/admin/usage-summary/` |
 
 > Note: The `admin` role is independent of Django's built-in `is_staff` / `is_superuser` flags. The custom `IsAdminUser` permission class checks `Company.role` directly.

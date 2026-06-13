@@ -6,43 +6,76 @@
     "_postman_id": "teamboard-collection-v1"
   },
   "variable": [
-    { "key": "base_url",    "value": "http://localhost:8000", "type": "string" },
-    { "key": "token",       "value": "",                      "type": "string" },
-    { "key": "api_key",     "value": "",                      "type": "string" },
-    { "key": "admin_token", "value": "",                      "type": "string" },
-    { "key": "beta_token",  "value": "",                      "type": "string" },
-    { "key": "audit_term",  "value": "",                      "type": "string" },
-    { "key": "page1_ids",   "value": "",                      "type": "string" }
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "beta_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "audit_term",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "page1_ids",
+      "value": "",
+      "type": "string"
+    }
   ],
   "item": [
-
     {
       "name": "── OFFICIAL SCENARIOS (11) ──",
       "item": [
-
         {
           "name": "1. Register a new company",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 201', () => pm.response.to.have.status(201));",
-                "pm.test('Has access token', () => {",
-                "  const d = pm.response.json();",
-                "  pm.expect(d).to.have.property('access');",
-                "  pm.collectionVariables.set('token', d.access);",
-                "  pm.collectionVariables.set('api_key', d.api_key);",
-                "});",
-                "pm.test('Has api_key (length > 10)', () => pm.expect(pm.response.json().api_key).to.be.a('string').with.lengthOf.above(10));",
-                "pm.test('company_name matches payload', () => pm.expect(pm.response.json().company_name).to.equal('Acme Corp'));",
-                "pm.test('role is client', () => pm.expect(pm.response.json().role).to.equal('client'));",
-                "pm.test('username echoed', () => pm.expect(pm.response.json().username).to.equal('acmecorp'));"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has access token', () => {",
+                  "  const d = pm.response.json();",
+                  "  pm.expect(d).to.have.property('access');",
+                  "  pm.collectionVariables.set('token', d.access);",
+                  "  pm.collectionVariables.set('api_key', d.api_key);",
+                  "});",
+                  "pm.test('Has api_key (length > 10)', () => pm.expect(pm.response.json().api_key).to.be.a('string').with.lengthOf.above(10));",
+                  "pm.test('company_name matches payload', () => pm.expect(pm.response.json().company_name).to.equal('Acme Corp'));",
+                  "pm.test('role is client', () => pm.expect(pm.response.json().role).to.equal('client'));",
+                  "pm.test('username echoed', () => pm.expect(pm.response.json().username).to.equal('acmecorp'));"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": "{{base_url}}/api/auth/register/",
             "body": {
               "mode": "raw",
@@ -50,26 +83,32 @@
             }
           }
         },
-
         {
           "name": "2. Register with duplicate username → 400",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 400', () => pm.response.to.have.status(400));",
-                "pm.test('Response body mentions already-exists error', () => {",
-                "  pm.expect(JSON.stringify(pm.response.json())).to.include('already exists');",
-                "});",
-                "pm.test('No access token leaked on error', () => {",
-                "  pm.expect(pm.response.json()).to.not.have.property('access');",
-                "});"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Response body mentions already-exists error', () => {",
+                  "  pm.expect(JSON.stringify(pm.response.json())).to.include('already exists');",
+                  "});",
+                  "pm.test('No access token leaked on error', () => {",
+                  "  pm.expect(pm.response.json()).to.not.have.property('access');",
+                  "});"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": "{{base_url}}/api/auth/register/",
             "body": {
               "mode": "raw",
@@ -77,28 +116,34 @@
             }
           }
         },
-
         {
           "name": "3. Login with valid credentials → 200 + JWT",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                "pm.test('Has access token — save it', () => {",
-                "  const d = pm.response.json();",
-                "  pm.expect(d).to.have.property('access');",
-                "  pm.collectionVariables.set('token', d.access);",
-                "});",
-                "pm.test('company_name matches registration', () => pm.expect(pm.response.json().company_name).to.equal('Acme Corp'));",
-                "pm.test('api_key is a non-empty string', () => pm.expect(pm.response.json().api_key).to.be.a('string').and.have.lengthOf.above(0));",
-                "pm.test('role is client', () => pm.expect(pm.response.json().role).to.equal('client'));"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has access token — save it', () => {",
+                  "  const d = pm.response.json();",
+                  "  pm.expect(d).to.have.property('access');",
+                  "  pm.collectionVariables.set('token', d.access);",
+                  "});",
+                  "pm.test('company_name matches registration', () => pm.expect(pm.response.json().company_name).to.equal('Acme Corp'));",
+                  "pm.test('api_key is a non-empty string', () => pm.expect(pm.response.json().api_key).to.be.a('string').and.have.lengthOf.above(0));",
+                  "pm.test('role is client', () => pm.expect(pm.response.json().role).to.equal('client'));"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": "{{base_url}}/api/auth/login/",
             "body": {
               "mode": "raw",
@@ -106,27 +151,33 @@
             }
           }
         },
-
         {
           "name": "4. Login with wrong password → 401",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 401', () => pm.response.to.have.status(401));",
-                "pm.test('Has detail error message', () => pm.expect(pm.response.json()).to.have.property('detail'));",
-                "pm.test('Error message says invalid credentials', () => {",
-                "  pm.expect(pm.response.json().detail.toLowerCase()).to.include('invalid');",
-                "});",
-                "pm.test('No access token in error response', () => {",
-                "  pm.expect(pm.response.json()).to.not.have.property('access');",
-                "});"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Has detail error message', () => pm.expect(pm.response.json()).to.have.property('detail'));",
+                  "pm.test('Error message says invalid credentials', () => {",
+                  "  pm.expect(pm.response.json().detail.toLowerCase()).to.include('invalid');",
+                  "});",
+                  "pm.test('No access token in error response', () => {",
+                  "  pm.expect(pm.response.json()).to.not.have.property('access');",
+                  "});"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": "{{base_url}}/api/auth/login/",
             "body": {
               "mode": "raw",
@@ -134,58 +185,27 @@
             }
           }
         },
-
         {
-          "name": "5. Query KB — no token → 401",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 401 (unauthenticated)', () => pm.response.to.have.status(401));",
-                "pm.test('Response has detail field', () => pm.expect(pm.response.json()).to.have.property('detail'));",
-                "pm.test('No KB results leaked', () => pm.expect(pm.response.json()).to.not.have.property('results'));"
-              ]
+          "name": "5. Query KB — no api_key → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 401 (unauthenticated)', () => pm.response.to.have.status(401));",
+                  "pm.test('Response has detail field', () => pm.expect(pm.response.json()).to.have.property('detail'));",
+                  "pm.test('No KB results leaked', () => pm.expect(pm.response.json()).to.not.have.property('results'));"
+                ]
+              }
             }
-          }],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "{{base_url}}/api/kb/query/",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"search\": \"select_related\"\n}"
-            }
-          }
-        },
-
-        {
-          "name": "6. Query KB — valid token, keyword with results → 200",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                "pm.test('search field echoed back correctly', () => pm.expect(pm.response.json().search).to.equal('select_related'));",
-                "pm.test('count > 0 (keyword exists in KB)', () => pm.expect(pm.response.json().count).to.be.above(0));",
-                "pm.test('results is a non-empty array', () => pm.expect(pm.response.json().results).to.be.an('array').with.lengthOf.above(0));",
-                "pm.test('results[0] has required fields: id, question, answer, category', () => {",
-                "  const r = pm.response.json().results[0];",
-                "  pm.expect(r).to.have.all.keys('id', 'question', 'answer', 'category');",
-                "});",
-                "pm.test('page and page_size fields present', () => {",
-                "  const d = pm.response.json();",
-                "  pm.expect(d).to.have.property('page');",
-                "  pm.expect(d).to.have.property('page_size');",
-                "  pm.expect(d).to.have.property('total_pages');",
-                "});"
-              ]
-            }
-          }],
+          ],
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",  "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "url": "{{base_url}}/api/kb/query/",
             "body": {
@@ -194,26 +214,77 @@
             }
           }
         },
-
         {
-          "name": "7. Query KB — valid token, no matching results → 200 count 0",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 200 — not 404', () => pm.response.to.have.status(200));",
-                "pm.test('count is exactly 0', () => pm.expect(pm.response.json().count).to.equal(0));",
-                "pm.test('results is an empty array', () => pm.expect(pm.response.json().results).to.be.an('array').that.is.empty);",
-                "pm.test('search term echoed even with 0 results', () => pm.expect(pm.response.json().search).to.equal('xyzzy_nonexistent_term_12345'));",
-                "pm.test('total_pages is 1 on empty result', () => pm.expect(pm.response.json().total_pages).to.equal(1));"
-              ]
+          "name": "6. Query KB — valid token, keyword with results → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('search field echoed back correctly', () => pm.expect(pm.response.json().search).to.equal('select_related'));",
+                  "pm.test('count > 0 (keyword exists in KB)', () => pm.expect(pm.response.json().count).to.be.above(0));",
+                  "pm.test('results is a non-empty array', () => pm.expect(pm.response.json().results).to.be.an('array').with.lengthOf.above(0));",
+                  "pm.test('results[0] has required fields: id, question, answer, category', () => {",
+                  "  const r = pm.response.json().results[0];",
+                  "  pm.expect(r).to.have.all.keys('id', 'question', 'answer', 'category');",
+                  "});",
+                  "pm.test('page and page_size fields present', () => {",
+                  "  const d = pm.response.json();",
+                  "  pm.expect(d).to.have.property('page');",
+                  "  pm.expect(d).to.have.property('page_size');",
+                  "  pm.expect(d).to.have.property('total_pages');",
+                  "});"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",  "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": "{{base_url}}/api/kb/query/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"select_related\"\n}"
+            }
+          }
+        },
+        {
+          "name": "7. Query KB — valid token, no matching results → 200 count 0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 — not 404', () => pm.response.to.have.status(200));",
+                  "pm.test('count is exactly 0', () => pm.expect(pm.response.json().count).to.equal(0));",
+                  "pm.test('results is an empty array', () => pm.expect(pm.response.json().results).to.be.an('array').that.is.empty);",
+                  "pm.test('search term echoed even with 0 results', () => pm.expect(pm.response.json().search).to.equal('xyzzy_nonexistent_term_12345'));",
+                  "pm.test('total_pages is 1 on empty result', () => pm.expect(pm.response.json().total_pages).to.equal(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}"
+              }
             ],
             "url": "{{base_url}}/api/kb/query/",
             "body": {
@@ -222,24 +293,31 @@
             }
           }
         },
-
         {
           "name": "8. Query KB — missing search field → 400",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 400', () => pm.response.to.have.status(400));",
-                "pm.test('Error body has search field validation message', () => pm.expect(pm.response.json()).to.have.property('search'));",
-                "pm.test('No results returned on validation error', () => pm.expect(pm.response.json()).to.not.have.property('results'));"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error body has search field validation message', () => pm.expect(pm.response.json()).to.have.property('search'));",
+                  "pm.test('No results returned on validation error', () => pm.expect(pm.response.json()).to.not.have.property('results'));"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",  "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}"
+              }
             ],
             "url": "{{base_url}}/api/kb/query/",
             "body": {
@@ -248,29 +326,34 @@
             }
           }
         },
-
         {
           "name": "9. Usage summary — CLIENT token → 403",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 403 (forbidden — client role)', () => pm.response.to.have.status(403));",
-                "pm.test('No admin data leaked in 403 response', () => {",
-                "  const d = pm.response.json();",
-                "  pm.expect(d).to.not.have.property('total_queries');",
-                "  pm.expect(d).to.not.have.property('top_search_terms');",
-                "});"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403 (forbidden — client role)', () => pm.response.to.have.status(403));",
+                  "pm.test('No admin data leaked in 403 response', () => {",
+                  "  const d = pm.response.json();",
+                  "  pm.expect(d).to.not.have.property('total_queries');",
+                  "  pm.expect(d).to.not.have.property('top_search_terms');",
+                  "});"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": "{{base_url}}/api/admin/usage-summary/"
           }
         },
-
         {
           "name": "10. Usage summary — Admin token → 200 with stats",
           "event": [
@@ -322,39 +405,47 @@
           ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
             "url": "{{base_url}}/api/admin/usage-summary/"
           }
         },
-
         {
           "name": "11. Verify QueryLog created — PGAdmin check note",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                "pm.test('count is a number (QueryLog records result count)', () => {",
-                "  pm.expect(pm.response.json().count).to.be.a('number');",
-                "});",
-                "pm.test('search term JWT is echoed', () => pm.expect(pm.response.json().search).to.equal('JWT'));",
-                "pm.test('QueryLog written — verify in DB (see console)', () => {",
-                "  console.log('--- PGAdmin Verification Query ---');",
-                "  console.log('SELECT company_id, search_term, results_count, queried_at');",
-                "  console.log('FROM api_querylog');",
-                "  console.log(\"WHERE search_term = 'JWT'\");",
-                "  console.log('ORDER BY queried_at DESC LIMIT 5;');",
-                "  console.log('Expected: latest row has search_term=JWT, results_count=' + pm.response.json().count);",
-                "  pm.expect(true).to.be.true;",
-                "});"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('count is a number (QueryLog records result count)', () => {",
+                  "  pm.expect(pm.response.json().count).to.be.a('number');",
+                  "});",
+                  "pm.test('search term JWT is echoed', () => pm.expect(pm.response.json().search).to.equal('JWT'));",
+                  "pm.test('QueryLog integrity: results_count >= 1 (JWT term exists in KB)', () => {",
+                  "  const d = pm.response.json();",
+                  "  pm.expect(d.count).to.be.a('number').and.to.be.at.least(1);",
+                  "  console.log('QueryLog written → search_term=JWT, results_count=' + d.count);",
+                  "});"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",  "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}"
+              }
             ],
             "url": "{{base_url}}/api/kb/query/",
             "body": {
@@ -363,14 +454,11 @@
             }
           }
         }
-
       ]
     },
-
     {
       "name": "── BEST EXAMPLES (2) ──",
       "item": [
-
         {
           "name": "Best-1. Pagination — page_size=2, verify formula and page 2 diverges",
           "event": [
@@ -388,19 +476,15 @@
               "script": {
                 "exec": [
                   "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-
                   "const d = pm.response.json();",
-
                   "// ── Shape ────────────────────────────────────────────────────────",
                   "pm.test('Response has all pagination fields', () => {",
                   "  pm.expect(d).to.have.all.keys('search', 'count', 'page', 'page_size', 'total_pages', 'results');",
                   "});",
-
                   "// ── Page 1 values ────────────────────────────────────────────────",
                   "pm.test('page is 1', () => pm.expect(d.page).to.equal(1));",
                   "pm.test('page_size echoed as 2', () => pm.expect(d.page_size).to.equal(2));",
                   "pm.test('results has exactly 2 items (page_size respected)', () => pm.expect(d.results).to.have.lengthOf(2));",
-
                   "// ── total_pages math ─────────────────────────────────────────────",
                   "pm.test('total_pages = ceil(count / page_size)', () => {",
                   "  const expected = Math.ceil(d.count / d.page_size);",
@@ -409,24 +493,20 @@
                   "pm.test('total_pages >= 2 (enough KB entries match \"database\")', () => {",
                   "  pm.expect(d.total_pages).to.be.at.least(2);",
                   "});",
-
                   "// ── Each result has correct schema ───────────────────────────────",
                   "pm.test('Every result item has id, question, answer, category', () => {",
                   "  d.results.forEach(r => pm.expect(r).to.have.all.keys('id', 'question', 'answer', 'category'));",
                   "});",
-
                   "// ── Save IDs for page-2 divergence check ────────────────────────",
                   "pm.collectionVariables.set('page1_ids', JSON.stringify(d.results.map(r => r.id)));",
-
                   "// ── Fetch page 2 inside test and verify it contains different IDs ─",
                   "const baseUrl  = pm.collectionVariables.get('base_url');",
-                  "const token    = pm.collectionVariables.get('token');",
+                  "const apiKey   = pm.collectionVariables.get('api_key');",
                   "const page1Ids = d.results.map(r => r.id);",
-
                   "pm.sendRequest({",
                   "  url: baseUrl + '/api/kb/query/?page=2&page_size=2',",
                   "  method: 'POST',",
-                  "  header: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },",
+                  "  header: { 'Content-Type': 'application/json', 'X-Api-Key': apiKey },",
                   "  body: { mode: 'raw', raw: JSON.stringify({ search: 'database' }) }",
                   "}, (err, res) => {",
                   "  pm.test('Page 2 returns 200', () => pm.expect(res.code).to.equal(200));",
@@ -447,16 +527,35 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",  "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/api/kb/query/?page=1&page_size=2",
-              "host": ["{{base_url}}"],
-              "path": ["api", "kb", "query", ""],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "kb",
+                "query",
+                ""
+              ],
               "query": [
-                { "key": "page",      "value": "1" },
-                { "key": "page_size", "value": "2" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "2"
+                }
               ]
             },
             "body": {
@@ -465,7 +564,6 @@
             }
           }
         },
-
         {
           "name": "Best-2. QueryLog Audit Trail — end-to-end data integrity",
           "event": [
@@ -501,36 +599,28 @@
                 "exec": [
                   "// ── Phase 1: KB query response is correct ────────────────────────",
                   "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-
                   "const d         = pm.response.json();",
                   "const auditTerm = pm.collectionVariables.get('audit_term');",
-
                   "pm.test('search term echoed back exactly', () => pm.expect(d.search).to.equal(auditTerm));",
                   "pm.test('count is 0 — unique term has no KB matches', () => pm.expect(d.count).to.equal(0));",
                   "pm.test('results is empty array', () => pm.expect(d.results).to.be.an('array').that.is.empty);",
                   "pm.test('total_pages is 1 on zero results', () => pm.expect(d.total_pages).to.equal(1));",
-
                   "// ── Phase 2: Admin endpoint confirms QueryLog was written ─────────",
                   "const baseUrl    = pm.collectionVariables.get('base_url');",
                   "const adminToken = pm.collectionVariables.get('admin_token');",
-
                   "pm.sendRequest({",
                   "  url:    baseUrl + '/api/admin/usage-summary/',",
                   "  method: 'GET',",
                   "  header: { 'Authorization': 'Bearer ' + adminToken }",
                   "}, (err, res) => {",
                   "  pm.test('Admin usage-summary returns 200 after our query', () => pm.expect(res.code).to.equal(200));",
-
                   "  const summary = res.json();",
-
                   "  pm.test('total_queries is a number >= 1', () => {",
                   "    pm.expect(summary.total_queries).to.be.a('number').and.to.be.at.least(1);",
                   "  });",
-
                   "  pm.test('active_companies is a number >= 1', () => {",
                   "    pm.expect(summary.active_companies).to.be.a('number').and.to.be.at.least(1);",
                   "  });",
-
                   "  pm.test('top_search_terms is array with count+search_term shape', () => {",
                   "    pm.expect(summary.top_search_terms).to.be.an('array');",
                   "    summary.top_search_terms.forEach(t => {",
@@ -538,11 +628,9 @@
                   "      pm.expect(t.count).to.be.a('number').and.to.be.above(0);",
                   "    });",
                   "  });",
-
                   "  pm.test('top_search_terms capped at 5 entries', () => {",
                   "    pm.expect(summary.top_search_terms.length).to.be.at.most(5);",
                   "  });",
-
                   "  // Log state for debugging — readable in Postman Console",
                   "  console.log('=== QueryLog Audit Trail ===');",
                   "  console.log('Audit search term :', auditTerm);",
@@ -558,8 +646,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",  "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}"
+              }
             ],
             "url": "{{base_url}}/api/kb/query/",
             "body": {
@@ -568,9 +662,7 @@
             }
           }
         }
-
       ]
     }
-
   ]
 }
